@@ -1,0 +1,19 @@
+#!/bin/bash --login
+#$ -cwd             # Run from the Current Directory
+#$ -pe smp.pe 32    # Max 32 cores Allowed
+#$ -l mem1500       # Run on High Memory Node
+
+# Load Anaconda 2022.10 in Environment
+module load apps/binapps/anaconda3/2022.10
+
+# Activate Conda Environment Containing OpenMC 0.13.3
+source activate openmc-env
+
+export OMP_NUM_THREADS=$NSLOTS
+export OPENMC_CROSS_SECTIONS=$HOME/scratch/OPENMC_DATA/endfb-viii.0-hdf5/cross_sections.xml
+
+# Create Reactor Materials Database
+python3 BaseMat.py
+
+# Run Depletion Study
+python3 Deplete.py

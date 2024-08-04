@@ -3,10 +3,45 @@
 
 ############### Library Imports
 import openmc
+import openmc.checkvalue as cv
+from numbers import Integral
+import warnings
 
 
 ############### Define OpenMC Materials Container
 MATDB = openmc.Materials()
+
+
+############### Define Lookup Functions
+def get_material_by_id(id) -> openmc.Material:
+    cv.check_type('id', id, Integral)
+    cv.check_greater_than('id', id, 0, equality=True)
+
+    for mat in MATDB:
+        if mat.id == id:
+            return mat
+
+    msg = f'No material instance exists with id={id}.'
+    raise IndexError(msg)
+
+def get_materials_by_name(name, case_sensitive=False, sort=False) \
+    -> openmc.Materials:
+    cv.check_type('name', name, str)
+
+    matches = openmc.Materials()
+    match_name = name if case_sensitive else name.lower()
+    for mat in MATDB:
+        mat_name = mat.name if case_sensitive else mat.name.lower()
+        if mat_name == match_name:
+            matches.append(mat)
+    if sort is True:
+        matches.sort(key=lambda x: x.id)
+
+    if len(matches) == 0:
+        msg = f'No materials found with names that match {match_name}.'
+        warnings.warn(msg, UserWarning)
+
+    return matches
 
 
 ############### Base Material Definitions

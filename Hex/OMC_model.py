@@ -1,36 +1,37 @@
-# OpenMC 0.13.3 Parameterised Hexagonal Fuel Element Model
+# OpenMC 0.15.0 Parameterised Hexagonal Fuel Element Model
 
 
 ############### Library Imports
 from copy import deepcopy
 from math import pi, sqrt
 import openmc
-import openmc.model
+from openmc.model import HexagonalPrism
+
+
+############## Import Materials Database Symbols and Lookup Functions
+from MatDB import *
 
 
 ############## Define Model Builder Function
 def OMC_model(MID: int = 0, MFR : float = 1) -> \
     tuple[openmc.Model, str, float, float, float, float]:
     ############### Material Definitions
-    ######## Import Base Materials
-    BaseMat = openmc.Materials.from_xml('BaseMat')
-
     # 19.75 % Enriched HALEU Uranium Nitride with 99.5 % N15 at 1600 K
-    Fuel : openmc.Material = deepcopy(BaseMat[7])
+    Fuel : openmc.Material = deepcopy(get_material_by_id(MATID_UN))
     Fuel.depletable = True
     Fuel.temperature = 1600 # type: ignore
 
     # MA956 ODS Steel Clad Material at 1500 K
-    Clad : openmc.Material = deepcopy(BaseMat[8])
+    Clad : openmc.Material = deepcopy(get_material_by_id(MATID_MA956ODS))
     Clad.temperature = 1500 # type: ignore
 
     # 40 g/mol HeXe Coolant at 1200 K and 2 MPa
-    Gas : openmc.Material = deepcopy(BaseMat[9])
+    Gas : openmc.Material = deepcopy(get_material_by_id(MATID_HeXe))
     Gas.temperature = 1200 # type: ignore
     Gas.set_density('g/cc', (1E-3 * 2E6) / ((8.314462 / 0.040) * Gas.temperature))
 
     # Moderator at 1200 K
-    Mod : openmc.Material = deepcopy(BaseMat[MID])
+    Mod : openmc.Material = deepcopy(get_material_by_id(MID))
     Mod.temperature = 1200 # type: ignore
 
     ######## Define Moderator to Fuel Density Ratio
@@ -65,8 +66,8 @@ def OMC_model(MID: int = 0, MFR : float = 1) -> \
     a_hp = sqrt(((MFR * 0.25 * pi * fp_dia**2) + 0.25 * pi * cc_dia**2)
                 * (2 / (3 * sqrt(3))))
     hp_dia : float = 2 * a_hp
-    r_hp = openmc.model.hexagonal_prism(a_hp, 'y', (0, 0), 'reflective')
-    c_mh = openmc.Cell(name='Hexagonal Moderator Block', fill=Mod, region=r_hp & +s_cc)
+    r_hp = HexagonalPrism(a_hp, 'y', (0, 0), 'reflective')
+    c_mh = openmc.Cell(name='Hexagonal Moderator Block', fill=Mod, region=-r_hp & +s_cc)
 
     # Create Root Universe
     root_univ = openmc.Universe(name='Root Universe', cells=[c_fp, c_cl, c_cc, c_mh])

@@ -6,7 +6,10 @@ import os
 import pickle
 import numpy as np
 import openmc
-import openmc.deplete
+
+
+############## Import Materials Database Symbols and Lookup Functions
+from MatDB import *
 
 
 ############### Import Model Builder Function
@@ -38,8 +41,20 @@ hex_dia = []
 # Define List to Store Fuel Element Linear Mass from Model Builder Function
 hex_mass = []
 
+# Define List of Moderator Materials to Simulate
+ModIDs = [
+    MATID_BeO,
+    MATID_ZrH,
+    MATID_YH,
+    MATID_MgO_40ZrH,
+    MATID_MgO_40YH,
+    MATID_BeO_MgO_40ZrH,
+    MATID_BeO_MgO_40YH,
+    MATID_CaO_CaH
+]
+
 ############### Run BOL Routine for Each Moderator
-for ID in range(0, 7):
+for ID in ModIDs:
     # Define Temporary Containers for Model Builder and Calculation Outputs
     Modname = []
     MF_dens = []
@@ -90,7 +105,7 @@ for ID in range(0, 7):
 
 
 ############### Save BOL Calculation Results
-with open(Pikname + '.pckl', 'wb') as f:
+with open(Pikname + '.pkl', 'wb') as f:
     pickle.dump(MF_vol, f)
     pickle.dump(Mname, f)
     pickle.dump(MF_den_ratio, f)

@@ -1,3 +1,7 @@
 
 # Ignore Python Cache Directories
 **/__pycache__/
+
+# Ignore OpenMC Generated Files
+**/*.xml
+**/*.h5

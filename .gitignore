@@ -1,3 +1,7 @@
+#
+# Nuclear Space Power Systems - Git Ignore Configuration
+#
+
 
 # Ignore Python Cache Directories
 **/__pycache__/
@@ -5,3 +9,8 @@
 # Ignore OpenMC Generated Files
 **/*.xml
 **/*.h5
+
+# Ignore Generated PDFs in Thermal Directory
+Thermal/*.pdf
+!Thermal/NSP_Brayton.pdf
+!Thermal/NSP_Rankine.pdf

@@ -10,8 +10,12 @@ import openmc
 import openmc.deplete
 
 
+############## Import Materials Database Symbols and Lookup Functions
+from MatDB import *
+
+
 ############### Import Model Builder Function
-from OMC_3D import OMC_model
+from BuildModel3D import BuildModel
 
 
 ############### Define Investigation Parameters
@@ -25,7 +29,7 @@ Rings = np.arange(8, 16 + 1, 1).tolist()
 pow = 3E6 # W
 
 # Define Radial Reflector Thickness
-Ref_thic = 0.1 # cm
+Ref_thick = 0.1 # cm
 
 # Define Radial Reflector Material ID
 Ref_id = 3
@@ -71,19 +75,21 @@ with open('serpent_fissq.json', 'r') as f:
 
 
 ############### Import List of Optimum MF Volume Ratios from Kinf BOL Runs
-MF_Mod = [
-    1.000, # Graphite (Dummy Ratio)
-    5.016, # ZrH
-    3.570, # YH
-    1.000, # BeO (Dummy Ratio)
-    7.944, # MgO-40YH
-    7.845, # BeO.MgO-40YH
-    8.676  # CaO-40CaH2
+# Tuple Structure: ID, Optimum MF Volume Ratio
+ModData = [
+    (MATID_BeO,            7.975),
+    (MATID_ZrH,            2.092),
+    (MATID_YH,             1.546),
+    (MATID_MgO_40ZrH,      3.184),
+    (MATID_MgO_40YH,       3.008),
+    (MATID_BeO_MgO_40ZrH,  3.395),
+    (MATID_BeO_MgO_40YH,   3.025),
+    (MATID_CaO_CaH,        2.779)
 ]
 
 
 ############### Run Depletion Routine for Each Moderator
-for ID in range(0, 7):
+for Mod in ModData:
     # Define Temporary Containers for Model Builder and Calculation Outputs
     Modname = []
     Refname = []
@@ -94,13 +100,9 @@ for ID in range(0, 7):
     k_3D = []
     burn = []
 
-    # Do not Deplete Graphite and BeO Cores
-    if ID == 0 or ID == 3:
-        continue
-
     for R in Rings:
         ######## Call Model Builder Function
-        Model_Data = OMC_model(ID, Ref_id, MF_Mod[ID], R, Ref_thic)
+        Model_Data = BuildModel(Mod[0], Ref_id, Mod[1], R, Ref_thick)
 
         ######## Save Model Output Data
         Modname.append(Model_Data[1])
@@ -189,7 +191,7 @@ for ID in range(0, 7):
 with open(Pikname + '.pckl', 'wb') as f:
     pickle.dump(Rings, f)
     pickle.dump(pow, f)
-    pickle.dump(Ref_thic, f)
+    pickle.dump(Ref_thick, f)
     pickle.dump(dep_sch, f)
     pickle.dump(MF_Mod, f)
     pickle.dump(Mname, f)

@@ -1,44 +1,47 @@
-# OpenMC 0.13.3 Parameterised 3D Reactor Core with Reflector Model
+# OpenMC 0.15.0 Parametrised 3D Reactor Core with Reflector Model
 
 
 ############### Library Imports
-from copy import deepcopy
 from math import pi, sqrt
 import openmc
-import openmc.model
+
+
+############## Import Materials Database Symbols and Lookup Functions
+from MatDB import *
 
 
 ############## Define Model Builder Function
-def OMC_model(MID : int = 0, RID : int = 3,
+def BuildModel(MID : int = 0, RID : int = 3,
               MFR : float = 1, HLR : int = 2,
               RRT : float = 1, RHR : float = 0.5413) -> \
     tuple[openmc.Model, str, str, float, float, float, float]:
-    ############### Material Definitions
-    ######## Import Base Materials
-    BaseMat = openmc.Materials.from_xml('BaseMat')
 
+    ############### Reset OpenMC Object IDs for Materials
+    openmc.reset_auto_ids()
+
+    ############### Material Definitions
     # 19.75 % Enriched HALEU Uranium Nitride with 99.5 % N15 at 1600 K
-    Fuel : openmc.Material = deepcopy(BaseMat[7])
+    Fuel : openmc.Material = get_material_by_id(MATID_UN).clone()
     Fuel.depletable = True
-    Fuel.temperature = 1600 # type: ignore
+    Fuel.temperature = 1600.0
 
     # MA956 ODS Steel Clad Material at 1500 K
-    Clad : openmc.Material = deepcopy(BaseMat[8])
-    Clad.temperature = 1500 # type: ignore
+    Clad : openmc.Material = get_material_by_id(MATID_MA956ODS).clone()
+    Clad.temperature = 1500.0
 
-    # 40 g/mol He Coolant at 1200 K and 2 MPa
-    Gas : openmc.Material = deepcopy(BaseMat[9])
-    Gas.temperature = 1200 # type: ignore
-    Gas.set_density('g/cc', (1E-3 * 2E6) / ((8.314462 / 0.040) * Gas.temperature))
+    # 40 g/mol HeXe Coolant at 1200 K and 2 MPa
+    Gas : openmc.Material = get_material_by_id(MATID_HeXe).clone()
+    Gas.temperature = 1200.0
+    Gas.set_density('g/cc',
+                    (1E-3 * 2E6) / ((8.314462 / 0.040) * Gas.temperature))
 
     # Moderator at 1200 K
-    Mod : openmc.Material = deepcopy(BaseMat[MID])
-    Mod.temperature = 1200 # type: ignore
+    Mod : openmc.Material = get_material_by_id(MID).clone()
+    Mod.temperature = 1200.0
 
     # Reflector at 900 K
-    Ref : openmc.Material = deepcopy(BaseMat[RID])
-    Ref.id = 99
-    Ref.temperature = 900 # type: ignore
+    Ref : openmc.Material = get_material_by_id(RID).clone()
+    Ref.temperature = 900.0
 
 
     ############### Geometry and Cell Definitions

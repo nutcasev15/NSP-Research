@@ -46,11 +46,11 @@ def get_materials_by_name(name, case_sensitive=False, sort=False) \
 
 ############### Base Material Definitions
 # Graphite
-Grph = openmc.Material(name='Graphite')
-Grph.add_elements_from_formula('C')
-Grph.set_density('g/cc', 1.710)
-MATID_Graphite = Grph.id
-MATDB.append(Grph)
+Graph = openmc.Material(name='Graphite')
+Graph.add_elements_from_formula('C')
+Graph.set_density('g/cc', 1.710)
+MATID_Graphite = Graph.id
+MATDB.append(Graph)
 
 # Zirconium Hydride
 ZrH = openmc.Material(name='ZrH$_{1.66}$')
@@ -129,18 +129,6 @@ CaO_CaH.name = 'CaO-40CaH$_2$'
 MATID_CaO_CaH = CaO_CaH.id
 MATDB.append(CaO_CaH)
 
-# 19.75 % Enriched HALEU Uranium Nitride with 99.5 % 15N
-UN = openmc.Material(name='U$^{15}$N')
-UN.add_nuclide('U235', 0.5 * 0.1975, 'ao')
-UN.add_nuclide('U238', 0.5 * 0.8025, 'ao')
-UN.add_element('N', 0.5, 'ao',
-               enrichment=99.5,
-               enrichment_target='N15',
-               enrichment_type='ao')
-UN.set_density('g/cc', 14.330)
-MATID_UN = UN.id
-MATDB.append(UN)
-
 # MA 956 ODS Steel
 ODS = openmc.Material(name='MA956ODS')
 ODS.add_element('Fe', 74.45, 'wo')
@@ -160,3 +148,15 @@ HeXe.add_elements_from_formula('He71654Xe28346', 'ao')
 # Gas has Temperature Dependant Density
 MATID_HeXe = HeXe.id
 MATDB.append(HeXe)
+
+# 19.75 % Enriched HALEU Uranium Nitride with 99.5 % 15N
+UN = openmc.Material(name='U$^{15}$N')
+UN.add_nuclide('U235', 0.5 * 0.1975, 'ao')
+UN.add_nuclide('U238', 0.5 * 0.8025, 'ao')
+UN.add_element('N', 0.5, 'ao',
+               enrichment=99.5,
+               enrichment_target='N15',
+               enrichment_type='ao')
+UN.set_density('g/cc', 14.330)
+MATID_UN = UN.id
+MATDB.append(UN)

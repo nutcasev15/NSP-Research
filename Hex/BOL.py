@@ -1,4 +1,4 @@
-# OpenMC 0.13.3 Python Master Script for BOL MF Ratio Study
+# OpenMC 0.15.0 Python Script for BOL MF Ratio Study
 
 
 ############### Library Imports
@@ -13,30 +13,30 @@ from MatDB import *
 
 
 ############### Import Model Builder Function
-from OMC_model import OMC_model
+from BuildModel2D import BuildModel
 
 
 ############### Define Investigation Parameters
 # Define Save File Name
-Pikname = 'BOL-Ref'
+PklName = 'BOL-Ref'
 
-# Define List of 16 MF Volume Ratios between 1 and 25
-MF_vol = np.logspace(0, np.log10(25), 16).tolist()
+# Define List of 16 MF Volume Ratios between 1 and 10
+MF_vol = np.linspace(1, 10, 16).tolist()
 
-# Define List to Store BOL Kinf Results vs MF_vol
+# Define List to Store BOL Kinf Results vs MF Volume Ratio
 K_BOL = []
 
 # Define List to Store Moderator Name from Model Builder Function
-Mname = []
+ModName = []
 
 # Define List to Store MF Density Ratio from Model Builder Function
 MF_den_ratio = []
 
 # Define List to Store Coolant Channel Diameter from Model Builder Function
-chnl_dia = []
+channel_dia = []
 
-# Define List to Store Fuel Element Circumscribing Diameter from Model Builder Function
-hex_dia = []
+# Define List to Store Fuel Element Width from Model Builder Function
+hex_width = []
 
 # Define List to Store Fuel Element Linear Mass from Model Builder Function
 hex_mass = []
@@ -56,46 +56,42 @@ ModIDs = [
 ############### Run BOL Routine for Each Moderator
 for ID in ModIDs:
     # Define Temporary Containers for Model Builder and Calculation Outputs
-    Modname = []
+    MName = []
     MF_dens = []
     cc_dia = []
-    hp_dia = []
+    hp_width = []
     fe_mass = []
     kinf = []
 
     for MF in MF_vol:
         ######## Call Model Builder Function
-        Model_Data = OMC_model(ID, MF)
+        Model_Data = BuildModel(ID, MF)
 
         ######## Save Model Output Data
-        Modname.append(Model_Data[1])
+        MName.append(Model_Data[1])
         MF_dens.append(Model_Data[2])
         cc_dia.append(Model_Data[3])
-        hp_dia.append(Model_Data[4])
+        hp_width.append(Model_Data[4])
         fe_mass.append(Model_Data[5])
 
         ######## Clear Run Directory of Previous Results
         os.system('rm -rf *.xml')
         os.system('rm -rf *.h5')
 
-        ######## Export and Run Model
-        Model_Data[0].export_to_model_xml()
-        openmc.run()
-
-        ######## Parse Kinf Results
-        kinf.append(openmc.StatePoint('statepoint.30.h5').keff)
+        ######## Run Model and Parse Kinf Results
+        kinf.append(openmc.StatePoint(Model_Data[0].run()).keff)
 
     # Store Name of Current Moderator
-    Mname.append(Modname)
+    ModName.append(MName)
 
     # Store Moderator to Fuel Density Ratios for Current Moderator
     MF_den_ratio.append(MF_dens)
 
     # Store Coolant Channel Diameters for Current Moderator
-    chnl_dia.append(cc_dia)
+    channel_dia.append(cc_dia)
 
-    # Store Fuel Element Circumscribing Diameters for Current Moderator
-    hex_dia.append(hp_dia)
+    # Store Fuel Element Width for Current Moderator
+    hex_width.append(hp_width)
 
     # Store Fuel Element Linear Mass Data for Current Moderator
     hex_mass.append(fe_mass)
@@ -105,12 +101,12 @@ for ID in ModIDs:
 
 
 ############### Save BOL Calculation Results
-with open(Pikname + '.pkl', 'wb') as f:
+with open(PklName + '.pkl', 'wb') as f:
     pickle.dump(MF_vol, f)
-    pickle.dump(Mname, f)
+    pickle.dump(ModName, f)
     pickle.dump(MF_den_ratio, f)
-    pickle.dump(chnl_dia, f)
-    pickle.dump(hex_dia, f)
+    pickle.dump(channel_dia, f)
+    pickle.dump(hex_width, f)
     pickle.dump(hex_mass, f)
     pickle.dump(K_BOL, f)
 

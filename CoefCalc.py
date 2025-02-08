@@ -86,7 +86,7 @@ def calculate_reactivity_coef(model : openmc.Model, param_list,
 
     # Initialize C API and export initial model xml file
     if not started_initialized:
-        model.init_lib(**init_args)
+        model.init_lib(**init_args, output=print_output)
 
     # Update model and calculate raw keff for each input value
     for param in param_list:
@@ -100,13 +100,12 @@ def calculate_reactivity_coef(model : openmc.Model, param_list,
         values.append(input)
 
         # Run using C API in memory and save raw simulation output
-        sp_filepath = model.run(**kwargs)
+        sp_filepath = model.run(**kwargs, output=print_output)
         with openmc.StatePoint(sp_filepath) as sp:
             raw_output = sp.keff
-            if print_output:
-                text = 'Input Variable : {:.3f}; Model produced \
-                    a keff of {:1.5f} +/- {:1.5f}'
-                print(text.format(input,  raw_output.n, raw_output.s))
+            text = 'Input Variable : {:.3f}; Model produced ' + \
+                'a keff of {:1.5f} +/- {:1.5f}'
+            print(text.format(input,  raw_output.n, raw_output.s))
             coefficients.append(raw_output)
 
     # Forward difference raw keff values and calculate reactivity

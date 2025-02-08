@@ -145,7 +145,12 @@ MATDB.append(ODS)
 # 40 g/mol HeXe Gas
 HeXe = openmc.Material(name='HeXe40')
 HeXe.add_elements_from_formula('He71654Xe28346', 'ao')
-# Gas has Temperature Dependant Density
+
+# Define Function to Return HeXe Density in g/cc
+def get_HeXe_40MM_2MPa_Dens(T) -> float:
+    # Ideal Gas has Temperature Dependant Density
+    return (1E-3 * (2E6 / ((8.314462 / 0.040) * T)))
+
 MATID_HeXe = HeXe.id
 MATDB.append(HeXe)
 
@@ -157,6 +162,12 @@ UN.add_element('N', 0.5, 'ao',
                enrichment=99.5,
                enrichment_target='N15',
                enrichment_type='ao')
-UN.set_density('g/cc', 14.330)
+
+# Define Function to Return Ideal UN Density in g/cc
+# Ref: https://www-pub.iaea.org/MTCD/Publications/PDF/IAEA-THPH_web.pdf
+# Valid from 298 K to 2523 K
+def get_UN_Ideal_Dens(T) -> float:
+    return (1E-3 * (14420 - 0.2779 * T - 4.897E-5 * T**2))
+
 MATID_UN = UN.id
 MATDB.append(UN)

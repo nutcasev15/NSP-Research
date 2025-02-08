@@ -24,6 +24,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     Fuel : openmc.Material = get_material_by_id(MATID_UN).clone()
     Fuel.depletable = True
     Fuel.temperature = 1600.0
+    Fuel.set_density('g/cc', get_UN_Ideal_Dens(Fuel.temperature))
 
     # MA956 ODS Steel Clad Material at 1500 K
     Clad : openmc.Material = get_material_by_id(MATID_MA956ODS).clone()
@@ -32,8 +33,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     # 40 g / mol HeXe Coolant at 1200 K and 2 MPa
     Gas : openmc.Material = get_material_by_id(MATID_HeXe).clone()
     Gas.temperature = 1200.0
-    Gas.set_density('g/cc',
-                    (1E-3 * 2E6) / ((8.314462 / 0.040) * Gas.temperature))
+    Gas.set_density('g/cc', get_HeXe_40MM_2MPa_Dens(Gas.temperature))
 
     # Moderator at 1200 K
     Mod : openmc.Material = get_material_by_id(MID).clone()
@@ -105,8 +105,14 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
                items=[Fuel, Clad, Gas, Struct, Struct])
 
     # Label Central Fuel Region in Fuel Pellet Universe
-    first_cell_id = next(iter(u_fp.cells))
+    cell_iter = iter(u_fp.cells)
+    first_cell_id = next(cell_iter)
     u_fp.cells[first_cell_id].name = Fuel.name
+
+    # Label Coolant Gas Region in Fuel Pellet Universe
+    _ = next(cell_iter)
+    third_cell_id = next(cell_iter)
+    u_fp.cells[third_cell_id].name = Gas.name
 
 
     ######## Create Moderator Pellet Universe
@@ -196,7 +202,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     model.materials = list(u_fp.get_all_materials().values())
     # Add Materials Data for Moderator
     model.materials.extend([Mod])
-    
+
     ######## Define Model Runtime Parameters
     # Setup Neutron Population and Criticality Cycle Parameters
     model.settings.batches = 30
@@ -226,4 +232,4 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
 
 
     ############### Return OpenMC Model and Model Data
-    return (model, Mod.name, MF_dens, fp_cc_dia, hex_width, fe_mass)
+    return (model, Mod.name, MF_dens, fp_cc_dia, hex_width, fe_mass, Mod, Fuel, Gas)

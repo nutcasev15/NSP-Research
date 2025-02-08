@@ -7,23 +7,28 @@ import itertools
 import numpy as np
 import matplotlib.markers as mrk
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fnt
 import matplotlib.ticker as tck
 
 
 ############### Load Results from Pickle File
 Pikname = 'Dep-Ref'
 with open(Pikname + '.pkl', 'rb') as f:
-    MF_vol = pickle.load(f)
+    ModData = pickle.load(f)
     dep_sch = pickle.load(f)
     Mname = pickle.load(f)
     MF_den_ratio = pickle.load(f)
-    chnl_dia = pickle.load(f)
+    channel_dia = pickle.load(f)
     hex_dia = pickle.load(f)
     hex_mass = pickle.load(f)
     K_EVL = pickle.load(f)
     K_BOL = pickle.load(f)
     K_EOL = pickle.load(f)
     U_burn = pickle.load(f)
+    Coef_BOL = pickle.load(f)
+    Coef_XST = pickle.load(f)
+    Coef_MOL = pickle.load(f)
+    Coef_EOL = pickle.load(f)
 
 
 ############### Plot Results
@@ -33,117 +38,67 @@ mrkrs = itertools.cycle(mrk.MarkerStyle.filled_markers)
 ###### Define Set of Line Styles for Plotting
 lines = itertools.cycle(['-', '--', ':', '-.'])
 
-# ####### BOL Kinf vs MF_vol for Various Moderators
-# fig = plt.figure(layout='constrained')
-# ax = fig.add_subplot(111)
-# ax.set_title('BOL $K_{inf}$ vs Moderator to Fuel Volume Ratio')
-# ax.set_xscale('log')
-# ax.set_xlabel('Moderator to Fuel Volume Ratio')
-# ax.autoscale(False, axis='y')
-# ax.set_ylim(0.6, 1.8)
-# ax.yaxis.set_major_locator(tck.MultipleLocator(0.1))
-# ax.yaxis.set_minor_locator(tck.MultipleLocator(0.025))
-# ax.set_ylabel('BOL $K_{inf}$')
-# ax.grid()
+####### Kinf Depletion History and Reactivity Coefficients
+for (ModName, Kinf, BOL, XST, MOL, EOL) in zip(Mname, K_EVL, Coef_BOL, Coef_XST, Coef_MOL, Coef_EOL):
+    fig = plt.figure(layout='constrained')
+    ax = fig.add_subplot(111)
+    ax.set_title('$K_{inf}$ Depletion History for ' + ModName)
+    ax.set_xlabel('Burnup (MWd/kg)')
+    ax.set_ylabel('$K_{inf}$')
+    ax.grid()
 
-# for i in range(0, 7):
-#     # Plot BOL Kinf Data with Error Bars for Each Moderator
-#     ax.errorbar(MF_vol, [j[0] for j in K_BOL[i]], yerr=[j[1] for j in K_BOL[i]],
-#                 label=Mname[i][0], marker=next(mrkrs), linestyle=next(lines))
+    # Plot BOL Kinf Data with Error Bars for Each Moderator
+    print(ModName + '\n')
+    print(BOL)
+    print('\n')
+    # ax.errorbar(dep_sch, y=[j[0] for j in Kinf], yerr=[j[1] for j in Kinf])
 
-# # Finalise and Save BOL Kinf vs MF_vol Plot
-# fig.legend(loc='outside right upper')
-# fig.savefig(Pikname + '_BOL_MFvol.pdf', format='pdf')
+    # # Finalise and Save BOL Kinf vs MF_vol Plot
+    # fig.savefig(Pikname + '_' + ModName + '_Kinf.pdf', format='pdf')
 
-# # Clear Figure and Axes
-# fig.clear()
-# ax.clear()
+    # # Clear Figure and Axes
+    # fig.clear()
+    # ax.clear()
 
 
-# ####### EOL Kinf vs MF_vol for Various Moderators
-# fig = plt.figure(layout='constrained')
-# ax = fig.add_subplot(111)
-# ax.set_title('EOL $K_{inf}$ vs Moderator to Fuel Volume Ratio')
-# ax.set_xscale('log')
-# ax.set_xlabel('Moderator to Fuel Volume Ratio')
-# ax.autoscale(False, axis='y')
-# ax.set_ylim(0.6, 1.8)
-# ax.yaxis.set_major_locator(tck.MultipleLocator(0.1))
-# ax.yaxis.set_minor_locator(tck.MultipleLocator(0.025))
-# ax.set_ylabel('EOL $K_{inf}$')
-# ax.grid()
-
-# for i in range(0, 7):
-#     # Plot EOL Kinf Data with Error Bars for Each Moderator
-#     ax.errorbar(MF_vol, [j[0] for j in K_EOL[i]], yerr=[j[1] for j in K_EOL[i]],
-#                 label=Mname[i][0], marker=next(mrkrs), linestyle=next(lines))
-
-
-# # Finalise and Save EOL Kinf vs MF_vol Plot
-# fig.legend(loc='outside right upper')
-# fig.savefig(Pikname + '_EOL_MFvol.pdf', format='pdf')
-
-# # Clear Figure and Axes
-# fig.clear()
-# ax.clear()
-
-####### Difference in Kinf vs MF_vol for Various Moderators
-fig = plt.figure(layout='constrained')
+####### Kinf and Burnup Data Table for Various Moderators
+fig = plt.figure(figsize=(6, 1.5))
 ax = fig.add_subplot(111)
-ax.set_title('Difference in $K_{inf}$ vs Moderator to Fuel Volume Ratio')
-ax.tick_params('x', rotation=30, labelsize=10)
-# ax.set_xscale('log')
-ax.set_xlabel('Moderator to Fuel Volume Ratio')
-# ax.autoscale(False, axis='y')
-# ax.set_ylim(-0.3, 0)
-# ax.yaxis.set_major_locator(tck.MultipleLocator(0.1))
-# ax.yaxis.set_minor_locator(tck.MultipleLocator(0.025))
-ax.set_ylabel('Difference in $K_{inf}$')
-# ax.grid()
+ax.axis('off')
+ax.grid('off')
 
-# for i in range(0, 7):
+# Retrieve Optimum Moderator to Fuel Volume Ratios
+MF_vol = ['{:1.2f}'.format(T[1]) for T in ModData]
+
+# Retrieve Kinf Values at BOL and EOL for Each Moderator
+Kinf_BOL = ['{:1.3f}'.format(K[0][0]) for K in K_EVL]
+Kinf_EOL = ['{:1.3f}'.format(K[-1][0]) for K in K_EVL]
+
 # Calculate Difference in Kinf between BOL and EOL
-K_diff = [(K[-1][0] - K[0][0]) for K in K_EVL]
+K_diff = ['{:1.3f}'.format((K[0][0] - K[-1][0])) for K in K_EVL]
 
-    # # Plot Kinf Difference Data for Each Moderator
-    # ax.plot(MF_vol, [j[0] for j in K_diff[i]],
-    #         label=Mname[i][0], marker=next(mrkrs), linestyle=next(lines))
+# Format Burnup Values for Table
+Burnup = ['{:1.2f}'.format(B) for B in U_burn]
 
-ax.bar_label(ax.bar(Mname, K_diff, width=0.75),
-             fmt='%.3f')
+rows = ('Optimum MF Ratio', 'BOL $K_{inf}$', 'EOL $K_{inf}$', '$\\Delta K$', 'Burnup (U at. %)')
 
-# Finalise and Save Kinf Difference vs MF_vol Plot
-# fig.legend(loc='outside right upper')
-fig.savefig(Pikname + '_KDiff_MFvol.pdf', format='pdf')
+# Remove BeO Results and Assemble Cell Data
+cell_text = [MF_vol[1:], Kinf_BOL[1:], Kinf_EOL[1:], K_diff[1:], Burnup[1:]]
 
-# Clear Figure and Axes
-fig.clear()
-ax.clear()
+Table_obj = ax.table(cellText=cell_text,
+                     rowLabels=rows,
+                     colLabels=Mname[1:],
+                     loc='center', cellLoc='center')
 
-####### U Atom Burnup at EOL vs MF_vol for Various Moderators
-fig = plt.figure(layout='constrained')
-ax = fig.add_subplot(111)
-ax.set_title('U Atom Burnup vs Moderator to Fuel Volume Ratio')
-ax.tick_params('x', rotation=30, labelsize=10)
-# ax.set_xscale('log')
-ax.set_xlabel('Moderator to Fuel Volume Ratio')
-# ax.autoscale(False, axis='y')
-# ax.set_ylim(4, 8)
-# ax.yaxis.set_major_locator(tck.MultipleLocator(1))
-# ax.yaxis.set_minor_locator(tck.MultipleLocator(0.25))
-ax.set_ylabel('U Burnup at EOL (Atom %)')
-# ax.grid()
-
-# for i in range(0, 7):
-#     # Plot U Burnup Data for Each Moderator
-#     ax.plot(MF_vol, U_burn[i], label=Mname[i][0], marker=next(mrkrs), linestyle=next(lines))
-
-ax.bar_label(ax.bar(Mname, U_burn, width=0.75),
-             fmt='%.3f')
+Table_obj.auto_set_font_size(False)
+Table_obj.set_fontsize(5.0)
+for (row, col), cell in Table_obj.get_celld().items():
+    if (row == 0 or col == -1):
+        cell.set_text_props(fontproperties=fnt.FontProperties(weight='bold', size=3.5))
 
 # Finalise and Save U Atom % Burnup vs MF_vol
 # fig.legend(loc='outside right upper')
-fig.savefig(Pikname + '_Burn_MFvol.pdf', format='pdf')
+fig.savefig(Pikname + '_Table.pdf', format='pdf', bbox_inches='tight')
 
 # Clear Figure and Axes
 fig.clear()

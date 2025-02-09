@@ -53,7 +53,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
                        fp_dia * 1E-2, 0.788E-2 - 0.01E-2)
 
     # Add Total Fuel Area Data to Fuel Material
-    # Assign Area to Volume Field as This is a 2D Model
+    # Assign Area to Volume Field as this is a 2D Model
     Fuel.volume = 0.25 * pi * fp_dia**2
 
     # Calculate Moderator Pin Diameter for 6 Pin Arrangement

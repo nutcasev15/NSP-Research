@@ -13,7 +13,7 @@ from MatDB import *
 
 
 ############### Import Model Builder Function
-from BuildModel2D import BuildModel
+from BuildHexFE2D import BuildModel
 
 
 ############### Define Investigation Parameters

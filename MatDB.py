@@ -307,8 +307,8 @@ def get_material_by_id(id : Integral) -> openmc.Material:
     raise IndexError(msg)
 
 
-def get_materials_by_name(name : str, case_sensitive=False, sort=False) \
-    -> openmc.Materials:
+def get_materials_by_name(name : str, case_sensitive : bool = False,
+                          sort : bool = False) -> openmc.Materials:
     ''' Return a List of Materials from the Database with Matching Names
 
         Parameters

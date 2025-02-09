@@ -10,7 +10,12 @@
 **/*.xml
 **/*.h5
 
-# Ignore Generated PDFs in Thermal Directory
-Thermal/*.pdf
+# Preserve Output HDF5 Files
+**/Output-*.h5
+
+# Ignore Generated PDFs
+**/*.pdf
+
+# Preserve Thermodynamic Cycle Diagram PDFs
 !Thermal/NSP_Brayton.pdf
 !Thermal/NSP_Rankine.pdf

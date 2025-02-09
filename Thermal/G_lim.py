@@ -27,16 +27,16 @@ Ti = 400 # K
 To = 1200 # K
 
 # Fuel Element Linear Power Rating (Maximum Possible)
-Q = 275E2 # W/m
+Q = 250E2 # W/m
 
 # Number of Fuel Element Rings in Reactor Core
-Rings = 8
+Rings = 5
 
-# Core Height
-H = 0.46 # m
+# Core Height (Maximum Possible)
+H = 0.60 # m
 
 # MA956 ODS Steel Clad Radius
-Rc = 0.84 # cm
+Rc = 0.89 # cm
 
 # Fuel Element Coolant Channel Area
 A = 0.75 # cm^2

@@ -19,29 +19,22 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     ############### Reset OpenMC Object IDs for Materials
     openmc.reset_auto_ids()
 
-    ############### Material Definitions
+    ############### Retrieve Material Definitions
     # 19.75 % Enriched HALEU Uranium Nitride with 99.5 % N15 at 1600 K
-    Fuel : openmc.Material = get_material_by_id(MATID_UN).clone()
+    Fuel : openmc.Material = get_mat_at_temp(MATID_UN, 1600)
     Fuel.depletable = True
-    Fuel.temperature = 1600.0
-    Fuel.set_density('g/cc', get_UN_Ideal_Dens(Fuel.temperature))
 
     # MA956 ODS Steel Clad Material at 1500 K
-    Clad : openmc.Material = get_material_by_id(MATID_MA956ODS).clone()
-    Clad.temperature = 1500.0
+    Clad : openmc.Material = get_mat_at_temp(MATID_MA956ODS, 1600)
 
-    # 40 g / mol HeXe Coolant at 1200 K and 2 MPa
-    Gas : openmc.Material = get_material_by_id(MATID_HeXe).clone()
-    Gas.temperature = 1200.0
-    Gas.set_density('g/cc', get_HeXe_40MM_2MPa_Dens(Gas.temperature))
+    # 40 g / mol HeXe Coolant at 1200 K
+    Gas : openmc.Material = get_mat_at_temp(MATID_HeXe, 1200)
 
     # Moderator at 1200 K
-    Mod : openmc.Material = get_material_by_id(MID).clone()
-    Mod.temperature = 1200.0
+    Mod : openmc.Material = get_mat_at_temp(MID, 1200)
 
-    # Carbonaceous Structural Material at 1200 K
-    Struct : openmc.Material = get_material_by_id(MATID_Graphite).clone()
-    Struct.temperature = 1200.0
+    # Carbon Carbon Structural Material at 1200 K
+    Struct : openmc.Material = get_mat_at_temp(MATID_CarbonCarbon, 1200)
 
     ######## Define Moderator to Fuel Density Ratio
     MF_dens = Mod.get_mass_density() / Fuel.get_mass_density()

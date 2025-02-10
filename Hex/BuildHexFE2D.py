@@ -13,28 +13,40 @@ from MatDB import *
 
 
 ############## Define Model Builder Function
-def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
+def BuildModel(MID: int = 0, MFR : float = 1.0, TIT : float = 800.0) -> \
     tuple[openmc.Model, str, float, float, float, float]:
 
     ############### Reset OpenMC Object IDs for Materials
     openmc.reset_auto_ids()
 
     ############### Retrieve Material Definitions
-    # 19.75 % Enriched HALEU Uranium Nitride with 99.5 % N15 at 1600 K
-    Fuel : openmc.Material = get_mat_at_temp(MATID_UN, 1600)
+    # 19.75 % Enriched HALEU Uranium Nitride with 99.5 % N15
+    # Fuel Centreline Temperature Polynomial from Gas_Model.py
+    FuelTemp : float = -7.6194E-13 * TIT**4 \
+        + -1.1413E-08 * TIT**3 \
+        + 7.6438E-05 * TIT**2 \
+        + 8.1000E-01 * TIT \
+        + 5.1174E+02
+    Fuel : openmc.Material = get_mat_at_temp(MATID_UN, FuelTemp)
     Fuel.depletable = True
 
-    # MA956 ODS Steel Clad Material at 1500 K
-    Clad : openmc.Material = get_mat_at_temp(MATID_MA956ODS, 1600)
+    # MA956 ODS Steel Clad Material
+    # Clad Surface Temperature Polynomial from Gas_Model.py
+    CladTemp : float = -8.1457E-12 * TIT**4 \
+        + 3.2676E-08 * TIT**3 \
+        + -3.4254E-05 * TIT**2 \
+        + 9.6795E-01 * TIT \
+        + 3.2131E+02
+    Clad : openmc.Material = get_mat_at_temp(MATID_MA956ODS, CladTemp)
 
-    # 40 g / mol HeXe Coolant at 1200 K
-    Gas : openmc.Material = get_mat_at_temp(MATID_HeXe, 1200)
+    # 40 g / mol HeXe Coolant at Turbine Inlet Temperature
+    Gas : openmc.Material = get_mat_at_temp(MATID_HeXe, TIT)
 
-    # Moderator at 1200 K
-    Mod : openmc.Material = get_mat_at_temp(MID, 1200)
+    # Moderator at Turbine Inlet Temperature
+    Mod : openmc.Material = get_mat_at_temp(MID, TIT)
 
-    # Carbon Carbon Structural Material at 1200 K
-    Struct : openmc.Material = get_mat_at_temp(MATID_CarbonCarbon, 1200)
+    # Graphite Structural Material at Turbine Inlet Temperature
+    Struct : openmc.Material = get_mat_at_temp(MATID_Graphite, TIT)
 
     ######## Define Moderator to Fuel Density Ratio
     MF_dens = Mod.get_mass_density() / Fuel.get_mass_density()
@@ -76,7 +88,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     fp_cc_area = 0.75 # cm^2
     fp_cc_dia = 2 * sqrt((fp_cc_area / pi) + (fp_cl_dia / 2)**2) # cm
 
-    # Calculate Carbonaceous Fuel Pellet Structural Sleeve Diameter
+    # Calculate Pellet Structural Sleeve Diameter
     slv_thick = 0.2 # cm
     fp_slv_dia = fp_cc_dia + 2 * slv_thick
     md_slv_dia = md_cl_dia + 2 * slv_thick
@@ -123,7 +135,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
     mod_lat.orientation = 'x'
     mod_lat.center = (0.0, 0.0)
 
-    # Create Cell with Reflector to fill Outskirts of the Lattice
+    # Create Cell with Structural Material to fill Lattice Outskirts
     mod_lat.outer = openmc.Universe(cells=[
         openmc.Cell(name='Outer Structural Sheath', fill=Struct)])
 
@@ -173,7 +185,7 @@ def BuildModel(MID: int = 0, MFR : float = 1.0) -> \
                     + 0.25 * pi * (md_slv_dia**2 - md_cl_dia**2) \
                         * Struct.get_mass_density())
 
-    # Add Carbonaceous Hexagonal Structural Clad Mass (g / cm)
+    # Add Hexagonal Structural Clad Mass (g / cm)
     # See https://en.wikipedia.org/wiki/Hexagon
     fe_mass += (0.8270 * pi * lat_rad**2 \
                 - 0.25 * pi * fp_slv_dia**2 \

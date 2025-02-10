@@ -12,6 +12,7 @@
 ############### Library Imports
 from os import system, name
 import numpy as np
+from numpy.polynomial.polynomial import Polynomial
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import root_scalar
 
@@ -26,19 +27,33 @@ import matplotlib.ticker as tck
 Rf = 7.9 # mm
 
 # MA 956 ODS Steel Radius
-Rc = 8.4 # mm
+Rc = 8.9 # mm
+
+# Target Core Coolant Mass Flux from G_lim.py
+G_tar = 600 # kg / (m^2 * s)
+
+# Target Core Linear Power from G_lim.py
+Q_tar = 250E2 # W / m
 
 # Maximum Fuel Centreline Temperature
 Tm = 1600 # K
 
 # Bulk Coolant Temperature Range
-Tb = np.arange(900, 1500, 100) # K
+Tb = np.arange(800, 1500, 100) # K
 
 # Coolant Mass Flux Range
-G = np.arange(100, 1100, 25) # kg / (m^2 * s)
+G = np.arange(300, 1100, 25) # kg / (m^2 * s)
 
 # Initialise Fuel Linear Power Rating
 Q = np.NaN * np.ones((Tb.shape[0], G.shape[0])) # W / m
+
+# Initialise Expected Temperatures from G_lim.py Inputs
+# Clad Surface
+CladTemp = np.NaN * np.ones((Tb.shape[0], )) # K
+# Fuel Pellet Surface
+FuelTemp = np.NaN * np.ones((Tb.shape[0], )) # K
+# Fuel Pellet Centreline
+CentreTemp = np.NaN * np.ones((Tb.shape[0], )) # K
 
 
 ############### Import and Define Material Thermal Data
@@ -63,6 +78,11 @@ def get_k_MA956(T):
 
 
 ############### Define Optimisation Functions
+# Define Helper Function to Solve for Fuel Pellet Centreline Temperature
+# Derived by Integrating the Equation for UN Thermal Conductivity
+def get_UN_Tm(x, ts):
+    return ((ts**1.39 + (1.39 / 1.41) * (x / (4 * np.pi)))**(1 / 1.39))
+
 # Define Helper Function to Solve for Fuel Pellet Surface Temperature
 # Derived by Integrating the Equation for UN Thermal Conductivity
 def get_UN_Ts(x):
@@ -74,6 +94,11 @@ def get_TH_Ts(x, tb, g):
     return (tb + x * ((np.log(Rc / Rf) / (2 * np.pi * get_k_MA956(tb))) \
             + (1 / (2 * np.pi * Rc * 1E-3 * get_HTC((tb, g))))))
 
+# Define Helper Function to Solve for Clad Surface Temperature
+# Derived from Radial Heat Convection Equations
+def get_TH_Tc(x, tb, g):
+    return (tb + x * (1 / (2 * np.pi * Rc * 1E-3 * get_HTC((tb, g)))))
+
 
 ############### Calculate Linear Power Values
 Tol = 1E-12
@@ -82,6 +107,11 @@ T_It = np.nditer(Tb, flags=['f_index'])
 G_It = np.nditer(G, flags=['f_index'])
 
 for tb in T_It:
+    # Calculate Temperatures at Expected Mass Flux and Linear Power
+    CladTemp[T_It.index] = get_TH_Tc(Q_tar, tb, G_tar)
+    FuelTemp[T_It.index] = get_TH_Ts(Q_tar, tb, G_tar)
+    CentreTemp[T_It.index] = get_UN_Tm(Q_tar, FuelTemp[T_It.index])
+
     for g in G_It:
         # Find Fuel Pin Linear Power Rating in W / m
         # Raise Function's Output to 1.39 to Avoid Imaginary Values
@@ -116,7 +146,50 @@ for tb in T_It:
             ((100 * T_It.index) / Tb.shape[0])))
 
 
-############### Plot Solutions
+############### Output Fuel Element Temperatures as Curve Fits
+# Curve Fit to 4th Order Polynomial as a Function of Coolant Temperature
+CentreTempCoef = Polynomial.fit(Tb, CentreTemp, 4).convert().coef
+FuelTempCoef = Polynomial.fit(Tb, FuelTemp, 4).convert().coef
+CladTempCoef = Polynomial.fit(Tb, CladTemp, 4).convert().coef
+
+# Output Equations and Validity Criteria for Curve Fits
+print('\n###############')
+print('From G_lim.py')
+print('{:10} {:10.3f} kg/m^2*s'.format('Target G:', G_tar))
+print('{:10} {:10.3f} W/m'.format('Target q\':', Q_tar))
+print('\nFuel Element Fitted Temperatures vs Bulk Coolant Temperature')
+Equation = '{:2} = {:1.4E} * Tb**4 ' + \
+    '+ {:1.4E} * Tb**3 ' + \
+    '+ {:1.4E} * Tb**2 ' + \
+    '+ {:1.4E} * Tb ' + \
+    '+ {:1.4E}'
+print(Equation.format(
+    'Tm',
+    CentreTempCoef[4],
+    CentreTempCoef[3],
+    CentreTempCoef[2],
+    CentreTempCoef[1],
+    CentreTempCoef[0]
+))
+print(Equation.format(
+    'Ts',
+    FuelTempCoef[4],
+    FuelTempCoef[3],
+    FuelTempCoef[2],
+    FuelTempCoef[1],
+    FuelTempCoef[0]
+))
+print(Equation.format(
+    'Tc',
+    CladTempCoef[4],
+    CladTempCoef[3],
+    CladTempCoef[2],
+    CladTempCoef[1],
+    CladTempCoef[0]
+))
+
+
+############### Plot Solution
 ####### Define Set of Markers for Plotting
 marks = itertools.cycle(mrk.MarkerStyle.filled_markers)
 
@@ -146,6 +219,8 @@ ax.set_ylabel('Reactor Maximum Linear Power (W/cm)')
 ax.legend(loc='upper left', prop={'size' : 8})
 fig.tight_layout()
 fig.savefig(f'{Rf:2.0f}' + '_mm_Gas_Linear_Power.pdf', format='pdf')
+print('\n###############')
+print('Reactor Linear Power Plot Saved as PDF')
 
 # Clear Figure and Axes
 fig.clear()

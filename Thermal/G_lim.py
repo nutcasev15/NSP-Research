@@ -30,13 +30,13 @@ To = 1200 # K
 Q = 250E2 # W/m
 
 # Number of Fuel Element Rings in Reactor Core
-Rings = 5
+Rings = 6
 
 # Core Height (Maximum Possible)
 H = 0.60 # m
 
 # MA956 ODS Steel Clad Radius
-Rc = 0.89 # cm
+Rc = 0.91 # cm
 
 # Fuel Element Coolant Channel Area
 A = 0.75 # cm^2

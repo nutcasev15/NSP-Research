@@ -27,7 +27,7 @@ import matplotlib.ticker as tck
 Rf = 7.9 # mm
 
 # MA 956 ODS Steel Radius
-Rc = 8.9 # mm
+Rc = 9.1 # mm
 
 # Target Core Coolant Mass Flux from G_lim.py
 G_tar = 600 # kg / (m^2 * s)

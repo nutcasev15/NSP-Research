@@ -13,8 +13,9 @@
 # Preserve Output HDF5 Files
 **/Output-*.h5
 
-# Ignore Generated PDFs
+# Ignore Generated PDFs and LaTeX Files
 **/*.pdf
+**/*.tex
 
 # Preserve Thermodynamic Cycle Diagram PDFs
 !Thermal/NSP_Brayton.pdf

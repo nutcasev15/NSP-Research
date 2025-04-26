@@ -1,8 +1,9 @@
-# OpenMC 0.15.0 Python Script for BOL MF Ratio Study
+# OpenMC 0.15.2 Python Script for BOL MF Ratio Study
 
 
 ############### Library Imports
 import os
+from sys import exit
 import pickle
 import numpy as np
 import openmc
@@ -18,16 +19,16 @@ from BuildHexFE2D import BuildModel
 
 ############### Define Investigation Parameters
 # Define Save File Name
-PklName = 'BOL-Ref'
+pkl_name = 'BOL-Ref'
 
-# Define List of 16 MF Volume Ratios between 1 and 10
-MF_vol = np.linspace(1, 10, 16).tolist()
+# Define List of 16 MF Volume Ratios between 1 and 12
+MF_vol = np.logspace(np.log10(1), np.log10(12), 16).tolist()
 
 # Define List to Store BOL Kinf Results vs MF Volume Ratio
 K_BOL = []
 
 # Define List to Store Moderator Name from Model Builder Function
-ModName = []
+mod_name = []
 
 # Define List to Store MF Density Ratio from Model Builder Function
 MF_den_ratio = []
@@ -43,67 +44,92 @@ hex_mass = []
 
 # Define List of Moderator Materials to Simulate
 ModIDs = [
-    MATID_BeO,
-    MATID_ZrH,
-    MATID_YH,
-    MATID_MgO_40ZrH,
-    MATID_MgO_40YH,
-    MATID_BeO_MgO_40ZrH,
-    MATID_BeO_MgO_40YH,
-    MATID_CaO_CaH
+  MATID_Graphite,
+  MATID_ZrH,
+  MATID_YH,
+  MATID_BeO,
+  MATID_MgO_40YH,
+  MATID_BeO_MgO_40YH,
+  MATID_CaO_CaH
 ]
 
 ############### Run BOL Routine for Each Moderator
 for ID in ModIDs:
-    # Define Temporary Containers for Model Builder and Calculation Outputs
-    MName = []
-    MF_dens = []
-    cc_dia = []
-    hp_width = []
-    fe_mass = []
-    kinf = []
+  # Define Temporary Containers for Model Builder and Calculation Outputs
+  name = []
+  MF_dens = []
+  cc_dia = []
+  hp_width = []
+  fe_mass = []
+  kinf = []
 
-    for MF in MF_vol:
-        ######## Call Model Builder Function
-        Model_Data = BuildModel(ID, MF)
+  for MF in MF_vol:
+    try:
+      ######## Call Model Builder Function
+      print('>> Building Model <<')
+      Model_Data = BuildModel(MID=ID, MFR=MF)
 
-        ######## Save Model Output Data
-        MName.append(Model_Data[1])
-        MF_dens.append(Model_Data[2])
-        cc_dia.append(Model_Data[3])
-        hp_width.append(Model_Data[4])
-        fe_mass.append(Model_Data[5])
+      ######## Save Model Output Data
+      name.append(Model_Data['Moderator Material'].name)
+      MF_dens.append(Model_Data['Density Ratio'])
+      cc_dia.append(Model_Data['Channel Diameter'])
+      hp_width.append(Model_Data['FE Width'])
+      fe_mass.append(Model_Data['FE Mass'])
 
-        ######## Clear Run Directory of Previous Results
-        os.system('rm -rf *.xml')
-        os.system('rm -rf *.h5')
+      ######## Clear Run Directory of Previous Results
+      print('>> Clearing Previous Result Files <<')
+      os.system('rm -rf *.xml')
+      os.system('rm -rf *.h5')
 
-        ######## Run Model and Parse Kinf Results
-        kinf.append(openmc.StatePoint(Model_Data[0].run()).keff)
+      ######## Run Model and Parse Kinf Results
+      print('>> Moderator: {:s} with Volume Ratio: {:.3f} <<'.format(
+        name[-1],
+        MF
+      ))
+      result = openmc.StatePoint(Model_Data['Model'].run(output=False))
+      kinf.append(
+        result.keff
+      )
 
-    # Store Name of Current Moderator
-    ModName.append(MName)
+      ######## Output Quick Diagnostics
+      print('>> Multiplication Factor: {:1.6f} +/- {:1.6} <<'.format(
+        result.keff.n,
+        result.keff.s
+      ))
+      print('>> Total Simulation Time: {:3.1f} s <<'.format(
+        result.runtime['total']
+      ))
+      print('\n')
+    except KeyboardInterrupt:
+      ######## Abort Simulation without Saving Results
+      exit()
+    except:
+      ######## Stop Simulation on Error Preserving Existing Results
+      break
 
-    # Store Moderator to Fuel Density Ratios for Current Moderator
-    MF_den_ratio.append(MF_dens)
+  # Store Name of Current Moderator
+  mod_name.append(name)
 
-    # Store Coolant Channel Diameters for Current Moderator
-    channel_dia.append(cc_dia)
+  # Store Moderator to Fuel Density Ratios for Current Moderator
+  MF_den_ratio.append(MF_dens)
 
-    # Store Fuel Element Width for Current Moderator
-    hex_width.append(hp_width)
+  # Store Coolant Channel Diameters for Current Moderator
+  channel_dia.append(cc_dia)
 
-    # Store Fuel Element Linear Mass Data for Current Moderator
-    hex_mass.append(fe_mass)
+  # Store Fuel Element Width for Current Moderator
+  hex_width.append(hp_width)
 
-    # Store BOL Kinf Values for Current Moderator
-    K_BOL.append(kinf)
+  # Store Fuel Element Linear Mass Data for Current Moderator
+  hex_mass.append(fe_mass)
+
+  # Store BOL Kinf Values for Current Moderator
+  K_BOL.append(kinf)
 
 
 ############### Save BOL Calculation Results
-with open(PklName + '.pkl', 'wb') as f:
+with open(pkl_name + '.pkl', 'wb') as f:
     pickle.dump(MF_vol, f)
-    pickle.dump(ModName, f)
+    pickle.dump(mod_name, f)
     pickle.dump(MF_den_ratio, f)
     pickle.dump(channel_dia, f)
     pickle.dump(hex_width, f)
